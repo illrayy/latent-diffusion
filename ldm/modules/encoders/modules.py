@@ -4,10 +4,11 @@ from functools import partial
 import clip
 from einops import rearrange, repeat
 import kornia
+from einops import rearrange
+from transformers import ViTModel, ViTMAEModel
 
 
-from ldm.modules.x_transformer import Encoder, TransformerWrapper  # TODO: can we directly rely on lucidrains code and simply add this as a reuirement? --> test
-
+from ldm.modules.x_transformer import Encoder, TransformerWrapper 
 
 class AbstractEncoder(nn.Module):
     def __init__(self):
@@ -17,6 +18,40 @@ class AbstractEncoder(nn.Module):
         raise NotImplementedError
 
 
+class IdentityEncoder(AbstractEncoder):
+    def encode(self, x):
+        return x
+    
+class FrozenViTMAE(AbstractEncoder):
+    """Uses the ViT_MAE encoder for controlnet (from huggingface)"""
+    def __init__(self, version="facebook/vit-mae-base", device="cuda", mask_ratio=0., freeze=True): 
+        super().__init__()
+        self.transformer = ViTMAEModel.from_pretrained(version)
+        self.device = device
+        self.transformer.config.mask_ratio = mask_ratio
+        if freeze:
+            self.freeze()
+
+    def freeze(self):
+        self.transformer = self.transformer.eval()
+        #self.train = disabled_train
+        for param in self.parameters():
+            param.requires_grad = False
+
+    def forward(self, x):
+        x = self.transformer(x).last_hidden_state[:, 0, :]
+        return x.unsqueeze(1)
+
+    def encode(self, x):
+        return self(x)
+
+    
+class AbstractEncoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def encode(self, *args, **kwargs):
+        raise NotImplementedError
 
 class ClassEmbedder(nn.Module):
     def __init__(self, embed_dim, n_classes=1000, key='class'):
