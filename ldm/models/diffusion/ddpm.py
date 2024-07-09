@@ -664,7 +664,7 @@ class LatentDiffusion(DDPM):
             if cond_key is None:
                 cond_key = self.cond_stage_key
             if cond_key != self.first_stage_key:
-                if cond_key in ['caption', 'coordinates_bbox']:
+                if cond_key in ['caption', 'coordinates_bbox', "reference"]:
                     xc = batch[cond_key]
                 elif cond_key == 'class_label':
                     xc = batch
@@ -960,11 +960,8 @@ class LatentDiffusion(DDPM):
 
                 adapted_cond = torch.stack([torch.cat([cut_cond, p], dim=1) for p in patch_limits_tknzd])
                 adapted_cond = rearrange(adapted_cond, 'l b n -> (l b) n')
-                print(adapted_cond.shape)
                 adapted_cond = self.get_learned_conditioning(adapted_cond)
-                print(adapted_cond.shape)
                 adapted_cond = rearrange(adapted_cond, '(l b) n d -> l b n d', l=z.shape[-1])
-                print(adapted_cond.shape)
 
                 cond_list = [{'c_crossattn': [e]} for e in adapted_cond]
 
@@ -1026,7 +1023,8 @@ class LatentDiffusion(DDPM):
 
         loss_simple = self.get_loss(model_output, target, mean=False).mean([1, 2, 3])
         loss_dict.update({f'{prefix}/loss_simple': loss_simple.mean()})
-
+        
+        t = t.to('cpu')
         logvar_t = self.logvar[t].to(self.device)
         loss = loss_simple / torch.exp(logvar_t) + logvar_t
         # loss = loss_simple / torch.exp(self.logvar) + self.logvar
