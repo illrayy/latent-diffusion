@@ -139,12 +139,12 @@ class wheatBase(Dataset):
 
 
 class wheatTrain(wheatBase):
-    def __init__(self, ag_rate=0.8, **kwargs):
-        super().__init__(data_root="wheat/target1",
+    def __init__(self, txt_file="datasets/wheat/val_ldm.txt", data_root="datasets/wheat/target", ag_rate=0.8, **kwargs):
+        super().__init__(txt_file=txt_file, data_root=data_root,
                          ag_rate=ag_rate,**kwargs)
 
 
 class wheatValidation(wheatBase):
-    def __init__(self, flip_p=0.,ag_rate=0., **kwargs):
-        super().__init__(txt_file="wheat/val_cldm.txt", data_root="wheat/target1",
+    def __init__(self, txt_file="datasets/wheat/val_ldm.txt", data_root="datasets/wheat/target", flip_p=0.,ag_rate=0., **kwargs):
+        super().__init__(txt_file=txt_file, data_root=data_root,
                          flip_p=flip_p, ag_rate=ag_rate, **kwargs)
